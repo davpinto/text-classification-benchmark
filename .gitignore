@@ -1,0 +1,6 @@
+data/*
+output/*
+debug.log
+__pycache__/*
+.vscode/*
+.evn
