@@ -2,7 +2,7 @@
 # [1] Kim, Yoon. "Convolutional neural networks for sentence classification." arXiv preprint arXiv:1408.5882 (2014).
 # [2] Zhang, Ye, and Byron Wallace. "A sensitivity analysis of (and practitioners' guide to) convolutional neural networks for sentence classification." arXiv preprint arXiv:1510.03820 (2015).
 
-from pandas import read_csv, DataFrame
+from pandas import read_csv, DataFrame, concat
 from sklearn.preprocessing import LabelEncoder
 from sklearn import metrics
 from keras.utils import np_utils
@@ -13,6 +13,8 @@ from keras.layers import Dense, Dropout, Activation
 from keras.layers import Embedding
 from keras.layers import Conv1D, GlobalMaxPooling1D
 from keras.utils.vis_utils import plot_model
+from keras.callbacks import TensorBoard
+from datetime import datetime
 import settings
 import logging
 
@@ -20,7 +22,7 @@ import logging
 vocab_size = 32768
 batch_size = 128
 embedding_dims = 64 # size of word vectors
-kernel_size = 4     # size of word groups in convolution
+kernel_size = 4     # size of word groups in convolution (like window size in W2V and GloVe)
 filters = 128
 hidden_dims = 256
 dropout_prob = 0.25
@@ -42,7 +44,7 @@ Y_test = np_utils.to_categorical(y_test)
 
 ## Tokenize text
 logging.info("Tokenizing text...")
-tokenizer = Tokenizer(num_words = vocab_size)
+tokenizer = Tokenizer(num_words = vocab_size, oov_token = "UNK")
 tokenizer.fit_on_texts(data_train.text)
 x_train = tokenizer.texts_to_sequences(data_train.text)
 x_test = tokenizer.texts_to_sequences(data_test.text)
@@ -91,12 +93,21 @@ plot_model(model, show_shapes = True, to_file = 'output/cnn_model.png')
 
 ## Train network
 logging.info("Training network...")
+logdir = "logs/cnn/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_callback = TensorBoard(
+    log_dir        = logdir, 
+    histogram_freq = 1, 
+    batch_size     = batch_size, 
+    write_graph    = True, 
+    write_grads    = False
+)
 model.fit(
     x               = X_train, 
     y               = Y_train,
     batch_size      = batch_size,
     epochs          = epochs,
-    validation_data = (X_test, Y_test)
+    validation_data = (X_test, Y_test), 
+    callbacks       = [tensorboard_callback]
 )
 model.save("output/cnn_model")
 
@@ -134,3 +145,16 @@ data_pred = DataFrame(
 data_pred["target"] = le.inverse_transform(y_test)
 data_pred["pred"] = le.inverse_transform(y_pred)
 data_pred.to_csv("output/cnn_prediction.csv")
+
+## Extract word embeddings
+words = DataFrame.from_dict(tokenizer.index_word, orient='index', columns=["word"])
+words = words[:vocab_size]
+embeddings = model.layers[0].get_weights()[0]
+col_names = []
+for i in range(embeddings.shape[1]): 
+    col_names.append("embedding_{:02d}".format(i+1))
+embeddings = DataFrame(embeddings, columns = col_names, index = words.index)
+embeddings = concat([words, embeddings], axis = 1, sort=False)
+embeddings.to_csv("output/cnn_word_embeddings.csv")
+embeddings.drop('word', axis=1, inplace=False).to_csv("output/cnn_embedding_vectors.tsv", sep="\t", header=False, index=False)
+embeddings.word.to_csv("output/cnn_embedding_metadata.tsv", sep="\t", header=False, index=False)
