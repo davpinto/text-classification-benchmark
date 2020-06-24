@@ -41,8 +41,8 @@ def clean_text_min(text):
     text = unidecode(text.lower())
 
     # Remove punctuations
-    # text = PUNCTS_RE.sub(' ', text)
-    text = NON_ALPHANUM_RE.sub(' ', text)
+    text = PUNCTS_RE.sub(' ', text)
+    #text = NON_ALPHANUM_RE.sub(' ', text)
 
     # Remove multiple spaces
     text = MULTI_SPACE_RE.sub(' ', text)
