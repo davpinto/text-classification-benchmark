@@ -1,5 +1,6 @@
 data/*
 output/*
+logs/*
 debug.log
 __pycache__/*
 .vscode/*
