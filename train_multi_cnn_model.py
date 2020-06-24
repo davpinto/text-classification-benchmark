@@ -23,7 +23,7 @@ import logging
 vocab_size = 32768
 batch_size = 128
 embedding_dims = 64
-kernel_size = [2, 3, 4, 5] # Multi-channel CNN for n-grams
+kernel_size = [3, 5, 7, 9] # Multi-channel CNN for n-grams
 filters = 128
 hidden_dims = [256, 128]
 dropout_prob = 0.25
