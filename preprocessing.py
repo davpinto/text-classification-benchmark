@@ -23,8 +23,6 @@ data_tr, data_te, y_tr, y_te = train_test_split(
 
 ## Clean text and persist on disk
 logging.info("Cleaning and formating text...")
-data_tr["text"] = data_tr["text"].apply(clean_text_min)
-data_te["text"] = data_te["text"].apply(clean_text_min)
 data_tr.to_csv("data/data_train_raw.csv")
 data_te.to_csv("data/data_test_raw.csv")
 data_tr["text"] = data_tr["text"].apply(clean_text)
