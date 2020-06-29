@@ -11,7 +11,7 @@ from keras.preprocessing import sequence
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
 from keras.layers import Embedding
-from keras.layers import GRU
+from keras.layers import GRU, LSTM
 from keras.utils.vis_utils import plot_model
 import settings
 import logging
@@ -65,9 +65,9 @@ model.add(Embedding(
 model.add(Dropout(dropout_prob))
 # 2. Recurrent layers
 model.add(GRU(recurrent_dims[0], return_sequences = True))
-model.add(Dropout(dropout_prob))
+# model.add(Dropout(dropout_prob))
 model.add(GRU(recurrent_dims[1]))
-model.add(Dropout(dropout_prob))
+# model.add(Dropout(dropout_prob))
 # 3. Fully connected hidden layer to interpret
 model.add(Dense(hidden_dims, activation = 'relu'))
 model.add(Dropout(dropout_prob))

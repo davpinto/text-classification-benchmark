@@ -5,6 +5,7 @@
 from pandas import read_csv, DataFrame, concat
 from sklearn.preprocessing import LabelEncoder
 from sklearn import metrics
+from gensim.models import KeyedVectors
 from keras.utils import np_utils
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing import sequence
@@ -21,8 +22,8 @@ import logging
 ## Set parameters
 vocab_size = 32768
 batch_size = 128
-embedding_dims = 64 # size of word vectors
-kernel_size = 4     # size of word groups in convolution (like window size in W2V and GloVe)
+embedding_dims = 128 # size of word vectors
+kernel_size = 4      # size of word groups in convolution (like window size in W2V and GloVe)
 filters = 128
 hidden_dims = 256
 dropout_prob = 0.25
@@ -57,13 +58,20 @@ X_test = sequence.pad_sequences(x_test, maxlen = max_input_size)
 print('x_train shape:', X_train.shape)
 print('x_test shape:', X_test.shape)
 
+## Import word vectors
+logging.info("Importing pre-trained word embeddings...")
+wv = KeyedVectors.load("output/word_vectors.kv")
+
 ## Build model
 model = Sequential()
 # 1. Embedding layer to learn word representations
+wt = wv[tokenizer.word_index.keys()]
 model.add(Embedding(
-    input_dim    = vocab_size,
+    input_dim    = wt.shape[0],
     output_dim   = embedding_dims,
-    input_length = max_input_size
+    input_length = max_input_size,
+    weights      = [wt], 
+    trainable    = False
 ))
 model.add(Dropout(dropout_prob))
 # 2. Convolutional layer with max pooling to combine words

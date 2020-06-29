@@ -1,6 +1,7 @@
 from nltk.data import find
 from nltk import download
 from nltk.corpus import stopwords
+from nltk.tokenize.regexp import regexp_tokenize
 from string import punctuation
 from unidecode import unidecode
 import re
@@ -72,3 +73,16 @@ def clean_text(text):
     text = MULTI_SPACE_RE.sub(' ', text)
 
     return text.strip()
+
+def tokenize_text(text, clean=False):
+    """
+        text: text to tokenize
+        output: list of words
+    """
+
+    if clean:
+        text = clean_text(text)
+
+    words = regexp_tokenize(text, pattern="\s+", gaps=True)
+
+    return(words)

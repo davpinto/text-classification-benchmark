@@ -3,7 +3,7 @@
 Install `Anaconda` or `Miniconda` and:
 
 ```bash
-conda create -n text-class python=3.7 ipykernel unidecode nltk numpy pandas scikit-learn tensorflow-gpu keras pydot -y
+conda create -n text-class python=3.7 ipykernel unidecode nltk numpy pandas scikit-learn tensorflow-gpu keras pydot gensim -y
 conda activate text-class
 ```
 
@@ -86,3 +86,13 @@ conda deactivate
 - [Deep Models for NLP beginners](https://github.com/BrambleXu/nlp-beginner-guide-keras).
 
 ### Very Deep Convolutional Neural Network
+
+## TO DO
+
+- Create skig-gram model to generate pre-trained embeddings
+- Create files to the Embedding Projector
+- Use pre-trained embeddings
+- Create tests
+- Create linter
+- Create CI
+
