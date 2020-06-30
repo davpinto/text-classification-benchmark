@@ -13,16 +13,19 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
 from keras.layers import Embedding
 from keras.layers import Conv1D, GlobalMaxPooling1D
+from tensorflow.keras import regularizers
 from keras.utils.vis_utils import plot_model
 from keras.callbacks import TensorBoard
+from numpy import zeros, vstack
 from datetime import datetime
+from joblib import dump
 import settings
 import logging
 
 ## Set parameters
 vocab_size = 32768
 batch_size = 128
-embedding_dims = 128 # size of word vectors
+embedding_dims = 256 # size of word vectors
 kernel_size = 4      # size of word groups in convolution (like window size in W2V and GloVe)
 filters = 128
 hidden_dims = 256
@@ -47,6 +50,7 @@ Y_test = np_utils.to_categorical(y_test)
 logging.info("Tokenizing text...")
 tokenizer = Tokenizer(num_words = vocab_size, oov_token = "UNK")
 tokenizer.fit_on_texts(data_train.text)
+dump(tokenizer, "output/tokenizer.joblib", compress=1)
 x_train = tokenizer.texts_to_sequences(data_train.text)
 x_test = tokenizer.texts_to_sequences(data_test.text)
 
@@ -65,13 +69,14 @@ wv = KeyedVectors.load("output/word_vectors.kv")
 ## Build model
 model = Sequential()
 # 1. Embedding layer to learn word representations
-wt = wv[tokenizer.word_index.keys()]
+wt = wv[list(tokenizer.index_word.values())[1:(vocab_size + 1)]]
+wt = vstack([zeros(wt.shape[1]), wt])
 model.add(Embedding(
-    input_dim    = wt.shape[0],
+    input_dim    = vocab_size + 1,
     output_dim   = embedding_dims,
     input_length = max_input_size,
     weights      = [wt], 
-    trainable    = False
+    trainable    = True
 ))
 model.add(Dropout(dropout_prob))
 # 2. Convolutional layer with max pooling to combine words
@@ -85,7 +90,13 @@ model.add(Conv1D(
 model.add(Dropout(dropout_prob))
 model.add(GlobalMaxPooling1D())
 # 3. Fully connected hidden layer to interpret
-model.add(Dense(hidden_dims, activation = 'relu'))
+model.add(Dense(
+    units                = hidden_dims, 
+    activation           = 'relu',
+    kernel_regularizer   = regularizers.l2(1e-5),
+    bias_regularizer     = regularizers.l2(1e-5),
+    activity_regularizer = regularizers.l2(1e-5)
+))
 model.add(Dropout(dropout_prob))
 # 4. Softmax output layer
 model.add(Dense(len(le.classes_), activation = 'softmax'))
@@ -141,10 +152,7 @@ logging.info("Log-loss: {:.5f}".format(
 
 ## Save predictions
 logging.info("Persisting predictions on disk...")
-col_names = []
-labels = le.classes_
-for i in range(len(labels)): 
-    col_names.append("prob_{}".format(labels[i]))
+col_names = ["prob_{}".format(label) for label in le.classes_]
 data_pred = DataFrame(
     data    = y_prob,
     index   = range(y_prob.shape[0]),
@@ -158,9 +166,7 @@ data_pred.to_csv("output/cnn_prediction.csv")
 words = DataFrame.from_dict(tokenizer.index_word, orient='index', columns=["word"])
 words = words[:vocab_size]
 embeddings = model.layers[0].get_weights()[0]
-col_names = []
-for i in range(embeddings.shape[1]): 
-    col_names.append("embedding_{:02d}".format(i+1))
+col_names = ["embedding_{:02d}".format(i+1) for i in range(embeddings.shape[1])]
 embeddings = DataFrame(embeddings, columns = col_names, index = words.index)
 embeddings = concat([words, embeddings], axis = 1, sort=False)
 embeddings.to_csv("output/cnn_word_embeddings.csv")

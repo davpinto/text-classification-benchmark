@@ -18,11 +18,10 @@ text = data_train.text.append(data_test.text)
 # Tokenize text
 logging.info("Tokenizing text..")
 sentences = [tokenize_text(text) for text in text.values]
-sentences.append(["UNK"])
 
 # Train w2v model
 logging.info("Training word2vec..")
-model = Word2Vec(sentences, size=128, window=5, min_count=1, max_vocab_size=65536, sample=1e-3, iter=5, workers=4)
+model = Word2Vec(sentences, size=256, window=5, min_count=1, max_vocab_size=None, sample=1e-3, iter=5, workers=4)
 
 # Save word embeddings
 logging.info("Persisting word vectors on disk..")
