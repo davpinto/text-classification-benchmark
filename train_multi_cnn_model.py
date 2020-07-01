@@ -2,6 +2,7 @@
 # [1] Kim, Yoon. "Convolutional neural networks for sentence classification." arXiv preprint arXiv:1408.5882 (2014).
 # [2] Zhang, Ye, and Byron Wallace. "A sensitivity analysis of (and practitioners' guide to) convolutional neural networks for sentence classification." arXiv preprint arXiv:1510.03820 (2015).
 # [3] [1D CNN for text classification](https://keras.io/examples/imdb_cnn/).
+# [4] [How to Develop a Multichannel CNN Model for Text Classification](https://machinelearningmastery.com/develop-n-gram-multichannel-convolutional-neural-network-sentiment-analysis/)
 
 from pandas import read_csv, DataFrame
 from sklearn.preprocessing import LabelEncoder
@@ -23,7 +24,7 @@ import logging
 vocab_size = 32768
 batch_size = 128
 embedding_dims = 64
-kernel_size = [3, 5, 7, 9] # Multi-channel CNN for n-grams
+kernel_size = [4, 8, 12] # Multi-channel CNN for n-grams
 filters = 128
 hidden_dims = [256, 128]
 dropout_prob = 0.25
@@ -64,23 +65,23 @@ for i in range(len(kernel_size)):
     X_test_multi.append(X_test)
 
 ## Build model
-# 1. Convolutional channels from word embeddings
-inputs = []
+# 1. Embeddings layer
+inputs = Input(shape = (max_input_size, ))
+x = Embedding(vocab_size, embedding_dims)(inputs)
+# 2. Convolutional channels for n-grams
 channels = []
 for i in range(len(kernel_size)):
-    inputs.append(Input(shape = (max_input_size, )))
-    x = Embedding(vocab_size, embedding_dims)(inputs[i])
-    x = Dropout(dropout_prob)(x)
-    x = Conv1D(filters, kernel_size[i], activation = 'relu')(x)
-    x = Dropout(dropout_prob)(x)
-    x = MaxPooling1D()(x)
-    channels.append(Flatten()(x))
-# 2. Fully connected layers to interpret
+    y = Conv1D(filters, kernel_size[i], activation = 'relu')(x)
+    y = MaxPooling1D()(y)
+    y = Flatten()(y)
+    channels.append(y)
 x = concatenate(channels)
-for hidden_size in hidden_dims:
-    x = Dense(hidden_size, activation = 'relu')(x)
+x = Dropout(dropout_prob)(x)
+# 3. Fully connected layers to interpret (document embeddings)
+for h in hidden_dims:
+    x = Dense(h, activation = 'relu')(x)
     x = Dropout(dropout_prob)(x)
-# 3. Softmax output layer
+# 4. Softmax output layer for classification
 outputs = Dense(len(le.classes_), activation = 'softmax')(x)
 model = Model(inputs = inputs, outputs = outputs)
 
@@ -96,17 +97,17 @@ plot_model(model, show_shapes = True, to_file = 'output/multi_cnn_model.png')
 ## Train network
 logging.info("Training network...")
 model.fit(
-    x               = X_train_multi, 
+    x               = X_train, 
     y               = Y_train,
     batch_size      = batch_size,
     epochs          = epochs,
-    validation_data = (X_test_multi, Y_test)
+    validation_data = (X_test, Y_test)
 )
 model.save("output/multi_cnn_model")
 
 ## Predict test data
 logging.info("Predicting test set...")
-y_prob = model.predict(X_test_multi)
+y_prob = model.predict(X_test)
 y_pred = y_prob.argmax(axis=-1)
 logging.info("Overall Accuracy: {:.2f}%".format(
     100 * metrics.accuracy_score(y_test, y_pred)
