@@ -5,18 +5,16 @@
 from pandas import read_csv, DataFrame, concat
 from sklearn.preprocessing import LabelEncoder
 from sklearn import metrics
-from gensim.models import KeyedVectors
+from numpy import vstack, arange, append
 from keras.utils import np_utils
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing import sequence
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
-from keras.layers import Embedding
-from keras.layers import Conv1D, GlobalMaxPooling1D
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing import sequence
+from tensorflow.keras.models import Model, Sequential, load_model
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
+from tensorflow.keras.layers import Embedding, Conv1D, GlobalMaxPooling1D
 from tensorflow.keras import regularizers
-from keras.utils.vis_utils import plot_model
-from keras.callbacks import TensorBoard
-from numpy import zeros, vstack
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras.callbacks import TensorBoard
 from datetime import datetime
 from joblib import dump
 import settings
@@ -25,8 +23,8 @@ import logging
 ## Set parameters
 vocab_size = 32768
 batch_size = 128
-embedding_dims = 256 # size of word vectors
-kernel_size = 4      # size of word groups in convolution (like window size in W2V and GloVe)
+embedding_dims = 64 # size of word vectors
+kernel_size = 4     # size of word groups in convolution (like window size in W2V and GloVe)
 filters = 128
 hidden_dims = 256
 dropout_prob = 0.25
@@ -62,21 +60,13 @@ X_test = sequence.pad_sequences(x_test, maxlen = max_input_size)
 print('x_train shape:', X_train.shape)
 print('x_test shape:', X_test.shape)
 
-## Import word vectors
-logging.info("Importing pre-trained word embeddings...")
-wv = KeyedVectors.load("output/word_vectors.kv")
-
 ## Build model
 model = Sequential()
 # 1. Embedding layer to learn word representations
-wt = wv[list(tokenizer.index_word.values())[1:(vocab_size + 1)]]
-wt = vstack([zeros(wt.shape[1]), wt])
 model.add(Embedding(
     input_dim    = vocab_size + 1,
     output_dim   = embedding_dims,
-    input_length = max_input_size,
-    weights      = [wt], 
-    trainable    = True
+    input_length = max_input_size
 ))
 model.add(Dropout(dropout_prob))
 # 2. Convolutional layer with max pooling to combine words
@@ -87,8 +77,8 @@ model.add(Conv1D(
     padding    = "valid",
     activation = "relu"
 ))
-model.add(Dropout(dropout_prob))
 model.add(GlobalMaxPooling1D())
+model.add(Dropout(dropout_prob))
 # 3. Fully connected hidden layer to interpret
 model.add(Dense(
     units                = hidden_dims, 
@@ -97,9 +87,10 @@ model.add(Dense(
     bias_regularizer     = regularizers.l2(1e-5),
     activity_regularizer = regularizers.l2(1e-5)
 ))
+model.add(BatchNormalization())
 model.add(Dropout(dropout_prob))
 # 4. Softmax output layer
-model.add(Dense(len(le.classes_), activation = 'softmax'))
+model.add(Dense(len(le.classes_), activation='sigmoid'))
 
 ## Compile
 model.compile(
@@ -128,11 +119,12 @@ model.fit(
     validation_data = (X_test, Y_test), 
     callbacks       = [tensorboard_callback]
 )
-model.save("output/cnn_model")
+model.save("output/cnn")
 
 ## Predict test data
 logging.info("Predicting test set...")
 y_prob = model.predict(X_test)
+y_prob = y_prob / y_prob.sum(axis=1, keepdims=True)
 y_pred = y_prob.argmax(axis=-1)
 logging.info("Overall Accuracy: {:.2f}%".format(
     100 * metrics.accuracy_score(y_test, y_pred)
@@ -163,8 +155,9 @@ data_pred["pred"] = le.inverse_transform(y_pred)
 data_pred.to_csv("output/cnn_prediction.csv")
 
 ## Extract word embeddings
+logging.info("Extracting word embeddings...")
 words = DataFrame.from_dict(tokenizer.index_word, orient='index', columns=["word"])
-words = words[:vocab_size]
+words = words[:(vocab_size + 1)]
 embeddings = model.layers[0].get_weights()[0]
 col_names = ["embedding_{:02d}".format(i+1) for i in range(embeddings.shape[1])]
 embeddings = DataFrame(embeddings, columns = col_names, index = words.index)
@@ -172,3 +165,16 @@ embeddings = concat([words, embeddings], axis = 1, sort=False)
 embeddings.to_csv("output/cnn_word_embeddings.csv")
 embeddings.drop('word', axis=1, inplace=False).to_csv("output/cnn_embedding_vectors.tsv", sep="\t", header=False, index=False)
 embeddings.word.to_csv("output/cnn_embedding_metadata.tsv", sep="\t", header=False, index=False)
+
+## Extract document embeddings
+# Doc: https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
+logging.info("Extracting document embeddings...")
+model = load_model("output/cnn")
+embedding_extractor = Model(
+    inputs  = model.input, 
+    outputs = model.get_layer("dense").output
+)
+idx = arange(batch_size, X_test.shape[0], batch_size)
+if idx.max() < X_test.shape[0]: idx = append(idx, X_test.shape[0])
+embeddings = [embedding_extractor(X_test[(i - batch_size):i]).numpy() for i in idx]
+embeddings = vstack(tuple(embeddings))

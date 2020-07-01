@@ -75,9 +75,13 @@ conda deactivate
 
 ### Convolutional Neural Network
 
+![](output/cnn_model.png)
+
 ### Recurrent Neural Network
 
 ### Multi-channel Convolutional Neural Network
+
+![](output/multi_cnn_model.png)
 
 ### Character-level Convolutional Neural Network
 
@@ -90,8 +94,12 @@ conda deactivate
 ## TO DO
 
 - Create skig-gram model to generate pre-trained embeddings
-- Create files to the Embedding Projector
 - Use pre-trained embeddings
+- Create files to the Embedding Projector
+- Extract document embeddings from the output of the dense layer
+- Apply nearest neighbors on document embeddings
+- Apply k-means on document embeddings to find topics
+- Configure Tensor Board
 - Create tests
 - Create linter
 - Create CI
