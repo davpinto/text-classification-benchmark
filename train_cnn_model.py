@@ -9,12 +9,9 @@ from numpy import vstack, arange, append
 from keras.utils import np_utils
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing import sequence
-from tensorflow.keras.models import Model, Sequential, load_model
-from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
-from tensorflow.keras.layers import Embedding, Conv1D, GlobalMaxPooling1D
-from tensorflow.keras import regularizers
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras.callbacks import TensorBoard
+from benchmark.models import build_cnn
 from datetime import datetime
 from joblib import dump
 import settings
@@ -32,8 +29,8 @@ epochs = 2
 
 ## Import data
 logging.info("Importing data...")
-data_train = read_csv("data/data_train.csv")
-data_test = read_csv("data/data_test.csv")
+data_train = read_csv("data/data_train.csv", index_col=0)
+data_test = read_csv("data/data_test.csv", index_col=0)
 
 ## Encode output
 logging.info("Encoding output...")
@@ -61,45 +58,13 @@ print('x_train shape:', X_train.shape)
 print('x_test shape:', X_test.shape)
 
 ## Build model
-model = Sequential()
-# 1. Embedding layer to learn word representations
-model.add(Embedding(
-    input_dim    = vocab_size + 1,
-    output_dim   = embedding_dims,
-    input_length = max_input_size
-))
-model.add(Dropout(dropout_prob))
-# 2. Convolutional layer with max pooling to combine words
-model.add(Conv1D(
-    filters,
-    kernel_size,
-    strides    = 1,
-    padding    = "valid",
-    activation = "relu"
-))
-model.add(GlobalMaxPooling1D())
-model.add(Dropout(dropout_prob))
-# 3. Fully connected hidden layer to interpret
-model.add(Dense(
-    units                = hidden_dims, 
-    activation           = 'relu',
-    kernel_regularizer   = regularizers.l2(1e-5),
-    bias_regularizer     = regularizers.l2(1e-5),
-    activity_regularizer = regularizers.l2(1e-5)
-))
-model.add(BatchNormalization())
-model.add(Dropout(dropout_prob))
-# 4. Softmax output layer
-model.add(Dense(len(le.classes_), activation='sigmoid'))
-
-## Compile
-model.compile(
-    loss      = 'categorical_crossentropy',
-    optimizer = 'adam',
-    metrics   = ['accuracy']
-)
+model = build_cnn(embedding_input_dim=vocab_size + 1, 
+                  embedding_input_length=max_input_size,
+                  output_dim=len(le.classes_), output_activation="sigmoid",
+                  objective_function="categorical_crossentropy",
+                  evaluation_metrics=["accuracy"])
 model.summary()
-plot_model(model, show_shapes = True, to_file = 'output/cnn_model.png')
+plot_model(model, show_shapes=True, to_file='output/cnn_model.png')
 
 ## Train network
 logging.info("Training network...")
@@ -159,7 +124,8 @@ logging.info("Extracting word embeddings...")
 words = DataFrame.from_dict(tokenizer.index_word, orient='index', columns=["word"])
 words = words[:(vocab_size + 1)]
 embeddings = model.layers[0].get_weights()[0]
-col_names = ["embedding_{:02d}".format(i+1) for i in range(embeddings.shape[1])]
+nrow, ncol = embeddings.shape
+col_names = ["embedding_{:02d}".format(i+1) for i in range(ncol)]
 embeddings = DataFrame(embeddings, columns = col_names, index = words.index)
 embeddings = concat([words, embeddings], axis = 1, sort=False)
 embeddings.to_csv("output/cnn_word_embeddings.csv")
@@ -168,13 +134,18 @@ embeddings.word.to_csv("output/cnn_embedding_metadata.tsv", sep="\t", header=Fal
 
 ## Extract document embeddings
 # Doc: https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
+# PS: Extracting all samples at the same time will freeze TensorFlow.
 logging.info("Extracting document embeddings...")
 model = load_model("output/cnn")
 embedding_extractor = Model(
     inputs  = model.input, 
     outputs = model.get_layer("dense").output
 )
-idx = arange(batch_size, X_test.shape[0], batch_size)
-if idx.max() < X_test.shape[0]: idx = append(idx, X_test.shape[0])
-embeddings = [embedding_extractor(X_test[(i - batch_size):i]).numpy() for i in idx]
+nrow, ncol = X_test.shape
+idx = arange(start=0, stop=nrow, step=batch_size)
+if idx.max() < nrow: idx = append(idx, nrow)
+embeddings = [embedding_extractor(X_test[idx[i]:idx[i+1]]).numpy() for i in range(len(idx)-1)]
 embeddings = vstack(tuple(embeddings))
+col_names = ["embedding_{:02d}".format(i+1) for i in range(hidden_dims)]
+embeddings = DataFrame(embeddings, columns = col_names, index = data_test.index)
+embeddings.to_csv("output/cnn_doc_embeddings_test_data.csv")

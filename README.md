@@ -3,7 +3,7 @@
 Install `Anaconda` or `Miniconda` and:
 
 ```bash
-conda create -n text-class python=3.7 ipykernel unidecode nltk numpy pandas scikit-learn tensorflow-gpu keras pydot gensim -y
+conda create -n text-class python=3.7 ipykernel unidecode nltk numpy pandas scikit-learn tensorflow-gpu keras pydot gensim sphinx -y
 conda activate text-class
 ```
 
@@ -11,6 +11,15 @@ Running TensorBoard:
 
 ```bash
 tensorboard --logdir logs --port 6006
+```
+
+Generating documentation:
+
+[Getting Started with Sphinx / Autodoc](https://medium.com/@eikonomega/getting-started-with-sphinx-autodoc-part-1-2cebbbca5365).
+
+```bash
+cd docs
+make html
 ```
 
 ## Dataset
@@ -100,7 +109,12 @@ conda deactivate
 - Apply nearest neighbors on document embeddings
 - Apply k-means on document embeddings to find topics
 - Configure Tensor Board
+- Normalize code according to Clean ML Code ()
 - Create tests
 - Create linter
 - Create CI
 
+## References
+
+- [Regularization: Normalization & Dropout](https://towardsdatascience.com/regularization-part-4-2ee8e7aa60ec)
+- []()
