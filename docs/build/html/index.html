@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Text Classification Benchmark’s documentation! &#8212; Text Classification Benchmark 0.0.1 documentation</title>
+    <link rel="stylesheet" href="_static/pyramid.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">Text Classification Benchmark 0.0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Welcome to Text Classification Benchmark’s documentation!</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-text-classification-benchmark-s-documentation">
+<h1>Welcome to Text Classification Benchmark’s documentation!<a class="headerlink" href="#welcome-to-text-classification-benchmark-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="module-benchmark.models">
+<span id="models"></span><h1>Models<a class="headerlink" href="#module-benchmark.models" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="benchmark.models.build_cnn">
+<code class="sig-prename descclassname">benchmark.models.</code><code class="sig-name descname">build_cnn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">embedding_input_dim</span></em>, <em class="sig-param"><span class="n">embedding_input_length</span></em>, <em class="sig-param"><span class="n">output_dim</span></em>, <em class="sig-param"><span class="n">output_activation</span></em>, <em class="sig-param"><span class="n">objective_function</span></em>, <em class="sig-param"><span class="n">evaluation_metrics</span></em>, <em class="sig-param"><span class="n">embedding_vector_size</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">convolution_filters</span><span class="o">=</span><span class="default_value">128</span></em>, <em class="sig-param"><span class="n">convolution_kernel_size</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">hidden_units</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">dropout_rate</span><span class="o">=</span><span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">l2</span><span class="o">=</span><span class="default_value">1e-05</span></em>, <em class="sig-param"><span class="n">optimizer</span><span class="o">=</span><span class="default_value">'adam'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmark.models.build_cnn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convolutional Neural Network for Text Classification.</p>
+<p>This function builds a CNN model for text classification [1,2]_
+on top of Keras.</p>
+<blockquote>
+<div><dl class="simple">
+<dt>[1] Kim, Yoon. “Convolutional neural networks for sentence</dt><dd><p>classification.” arXiv preprint arXiv:1408.5882 (2014).</p>
+</dd>
+<dt>[2] Zhang, Ye, and Byron Wallace. “A sensitivity analysis of</dt><dd><p>(and practitioners’ guide to) convolutional neural networks
+for sentence classification.” arXiv preprint arXiv:1510.03820
+(2015).</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embedding_input_dim</strong> (<em>int</em>) – Size of the vocabulary including the OOV
+(Out of Vocabulary) term.</p></li>
+<li><p><strong>embedding_input_length</strong> (<em>int</em>) – Maximum allowed sentence length. Usually
+set as the length of the largest training sentence.</p></li>
+<li><p><strong>output_dim</strong> (<em>int</em>) – Number of classes for multiclass and multilabel
+problems or 1 for binary problems.</p></li>
+<li><p><strong>output_activation</strong> (<em>str</em>) – The probability prediction function. Choose
+‘softmax’ for multiclass problemas or ‘sigmoid’ for binary and
+multilabel problems.</p></li>
+<li><p><strong>objective_function</strong> (<em>str</em>) – The loss function to be minimized. Choose
+‘binary_crossentropy’ for binary problems and
+‘categorical_crossentropy’ for multiclass and multilabel problems.</p></li>
+<li><p><strong>evaluation_metrics</strong> (<em>list of str</em>) – List of metrics to evaluate model
+during the training process and to validate it after each epoch.</p></li>
+<li><p><strong>embedding_vector_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Dimension of the word embedding
+vectors. Defaults to 300.</p></li>
+<li><p><strong>convolution_filters</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of filters in the
+convolutional layer. Defaults to 128.</p></li>
+<li><p><strong>convolution_kernel_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Size of the word window in
+the convolution, similar to the window size in the Word2Vec
+model. Defaults to 5.</p></li>
+<li><p><strong>hidden_units</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of hidden units in the
+interpretation layer. It is the size of the document
+embedding vectors. Defaults to 300.</p></li>
+<li><p><strong>dropout_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Dropout rate applied to the
+interpretation layer. Defaults to 0.1.</p></li>
+<li><p><strong>l2</strong> (<em>float</em><em>, </em><em>optional</em>) – Regularization strength to penalize the
+l2 norm of the interpretation layer. Defaults to 1e-5.</p></li>
+<li><p><strong>optimizer</strong> (<em>str</em><em>, </em><em>optional</em>) – Optimization algorithm to minimize loss and
+tune network weights and biases. Defaults to “adam”.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to Text Classification Benchmark’s documentation!</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<li><a class="reference internal" href="#module-benchmark.models">Models</a></li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">Text Classification Benchmark 0.0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Welcome to Text Classification Benchmark’s documentation!</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, David Pinto.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>
